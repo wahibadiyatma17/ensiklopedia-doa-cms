@@ -26,6 +26,18 @@
     },
     "description": {
       "type": "text"
+    },
+    "subcategories": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::category.category",
+      "inversedBy": "categories"
+    },
+    "categories": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::category.category",
+      "mappedBy": "subcategories"
     }
   }
 }
