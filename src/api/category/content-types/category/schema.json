@@ -10,7 +10,11 @@
   "options": {
     "draftAndPublish": false
   },
-  "pluginOptions": {},
+  "pluginOptions": {
+    "i18n": {
+      "localized": false
+    }
+  },
   "attributes": {
     "name": {
       "type": "string"
@@ -37,7 +41,7 @@
       "type": "relation",
       "relation": "oneToOne",
       "target": "api::doa.doa",
-      "inversedBy": "category"
+      "mappedBy": "category"
     }
   }
 }
