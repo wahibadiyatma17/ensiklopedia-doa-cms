@@ -38,6 +38,12 @@
       "relation": "manyToMany",
       "target": "api::category.category",
       "mappedBy": "subcategories"
+    },
+    "doas": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::doa.doa",
+      "mappedBy": "category"
     }
   }
 }
