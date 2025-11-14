@@ -471,7 +471,6 @@ export interface ApiArticleArticle extends Struct.CollectionTypeSchema {
     draftAndPublish: true;
   };
   attributes: {
-    category: Schema.Attribute.Relation<'manyToOne', 'api::category.category'>;
     content: Schema.Attribute.RichText;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -533,8 +532,12 @@ export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
   options: {
     draftAndPublish: false;
   };
+  pluginOptions: {
+    i18n: {
+      localized: false;
+    };
+  };
   attributes: {
-    articles: Schema.Attribute.Relation<'oneToMany', 'api::article.article'>;
     categories: Schema.Attribute.Relation<
       'manyToMany',
       'api::category.category'
@@ -575,26 +578,16 @@ export interface ApiDoaDoa extends Struct.CollectionTypeSchema {
     draftAndPublish: true;
   };
   attributes: {
-    arab: Schema.Attribute.Text & Schema.Attribute.Required;
     category: Schema.Attribute.Relation<'manyToOne', 'api::category.category'>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    image: Schema.Attribute.Media<'images'>;
-    indo: Schema.Attribute.Text & Schema.Attribute.Required;
-    latin: Schema.Attribute.Text;
+    doa: Schema.Attribute.Blocks & Schema.Attribute.Required;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::doa.doa'> &
       Schema.Attribute.Private;
-    orderNum: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
     publishedAt: Schema.Attribute.DateTime;
     slug: Schema.Attribute.UID<'title'> & Schema.Attribute.Required;
-    state: Schema.Attribute.Enumeration<['default', 'recommended']> &
-      Schema.Attribute.DefaultTo<'default'>;
-    status: Schema.Attribute.Enumeration<
-      ['draft', 'inactive', 'active', 'featured']
-    > &
-      Schema.Attribute.DefaultTo<'active'>;
     title: Schema.Attribute.String & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &

@@ -11,6 +11,8 @@
     "develop": "strapi develop",
     "seed:example": "node ./scripts/seed.js",
     "import:data": "strapi script scripts/import-to-strapi.js",
+    "cleanup:categories": "node scripts/cleanup-category-locales.js",
+    "fix:categories": "strapi script scripts/fix-category-locales.js",
     "start": "strapi start",
     "strapi": "strapi",
     "upgrade": "npx @strapi/upgrade latest",

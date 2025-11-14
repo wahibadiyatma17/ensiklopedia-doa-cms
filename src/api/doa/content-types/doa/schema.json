@@ -21,41 +21,15 @@
       "targetField": "title",
       "required": true
     },
-    "arab": {
-      "type": "text",
+    "doa": {
+      "type": "blocks",
       "required": true
-    },
-    "indo": {
-      "type": "text",
-      "required": true
-    },
-    "latin": {
-      "type": "text"
-    },
-    "image": {
-      "type": "media",
-      "multiple": false,
-      "allowedTypes": ["images"]
     },
     "category": {
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::category.category",
       "inversedBy": "doas"
-    },
-    "status": {
-      "type": "enumeration",
-      "enum": ["draft", "inactive", "active", "featured"],
-      "default": "active"
-    },
-    "state": {
-      "type": "enumeration",
-      "enum": ["default", "recommended"],
-      "default": "default"
-    },
-    "orderNum": {
-      "type": "integer",
-      "default": 0
     }
   }
 }

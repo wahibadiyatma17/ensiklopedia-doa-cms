@@ -19,12 +19,6 @@
       "type": "uid",
       "targetField": "title"
     },
-    "category": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::category.category",
-      "inversedBy": "articles"
-    },
     "content": {
       "type": "richtext"
     }
