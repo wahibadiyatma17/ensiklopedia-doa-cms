@@ -10,6 +10,10 @@
   "options": {
     "draftAndPublish": false
   },
+  "settings": {
+    "defaultSortBy": "rank",
+    "defaultSortOrder": "asc"
+  },
   "pluginOptions": {},
   "attributes": {
     "name": {
@@ -41,6 +45,14 @@
       "relation": "oneToOne",
       "target": "api::doa.doa",
       "mappedBy": "category"
+    },
+    "rank": {
+      "type": "integer",
+      "default": 0,
+      "configurable": false,
+      "writable": true,
+      "visible": true,
+      "private": false
     }
   }
 }
