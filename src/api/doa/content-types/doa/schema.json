@@ -12,7 +12,9 @@
   },
   "settings": {
     "defaultSortBy": "rank",
-    "defaultSortOrder": "asc"
+    "defaultSortOrder": "asc",
+    "pageSize": 7,
+    "maxPageSize": 7
   },
   "pluginOptions": {},
   "attributes": {

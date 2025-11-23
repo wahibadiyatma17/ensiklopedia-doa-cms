@@ -12,7 +12,9 @@
   },
   "settings": {
     "defaultSortBy": "rank",
-    "defaultSortOrder": "asc"
+    "defaultSortOrder": "asc",
+    "pageSize": 7,
+    "maxPageSize": 7
   },
   "pluginOptions": {},
   "attributes": {
@@ -53,6 +55,18 @@
       "writable": true,
       "visible": true,
       "private": false
+    },
+    "Main Category": {
+      "type": "boolean",
+      "default": false,
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      },
+      "configurable": false,
+      "private": false,
+      "visible": true
     }
   }
 }
