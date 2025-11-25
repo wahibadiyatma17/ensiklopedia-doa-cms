@@ -14,7 +14,10 @@
     "defaultSortBy": "rank",
     "defaultSortOrder": "asc",
     "pageSize": 7,
-    "maxPageSize": 7
+    "maxPageSize": 7,
+    "defaultFilters": {
+      "Main Category": true
+    }
   },
   "pluginOptions": {},
   "attributes": {
