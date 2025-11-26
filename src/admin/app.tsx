@@ -24,7 +24,7 @@ export default {
           !search || search === '' || search === '?page=1&pageSize=10&sort=rank%3AASC';
 
         if (shouldRedirect) {
-          const newUrl = `${path}?page=1&pageSize=7&sort=rank:ASC&filters[$and][0][Main%20Category][$eq]=true`;
+          const newUrl = `${path}?page=1&pageSize=16&sort=rank:ASC&filters[$and][0][Main%20Category][$eq]=true`;
           window.location.href = newUrl;
         }
       }
