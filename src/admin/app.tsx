@@ -13,21 +13,45 @@ export default {
   bootstrap(app: StrapiApp) {
     console.log('Admin customization loaded');
 
-    // Apply default filter for category collection only when no query params exist
+    // Apply default filter for category collection
     const applyDefaultFilter = () => {
       const path = window.location.pathname;
       const search = window.location.search;
 
-      if (
-        path === '/admin/content-manager/collection-types/api::category.category' &&
-        (!search || search === '')
-      ) {
-        const newUrl = `${path}?page=1&pageSize=7&sort=rank:ASC&filters[$and][0][Main%20Category][$eq]=true`;
-        window.location.href = newUrl;
+      if (path === '/admin/content-manager/collection-types/api::category.category') {
+        // Check if no query params exist OR if it has the specific params to redirect
+        const shouldRedirect =
+          !search || search === '' || search === '?page=1&pageSize=10&sort=rank%3AASC';
+
+        if (shouldRedirect) {
+          const newUrl = `${path}?page=1&pageSize=7&sort=rank:ASC&filters[$and][0][Main%20Category][$eq]=true`;
+          window.location.href = newUrl;
+        }
       }
     };
 
-    // Apply only on initial load
+    // Apply on initial load
     setTimeout(applyDefaultFilter, 500);
+
+    // Monitor for navigation changes (popstate for back/forward)
+    window.addEventListener('popstate', () => {
+      setTimeout(applyDefaultFilter, 100);
+    });
+
+    // Monitor for DOM changes to detect SPA navigation
+    const observer = new MutationObserver(() => {
+      applyDefaultFilter();
+    });
+
+    // Start observing after a delay to ensure the app is loaded
+    setTimeout(() => {
+      const targetNode = document.querySelector('[data-strapi="app"]') || document.body;
+      observer.observe(targetNode, { 
+        childList: true, 
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['data-testid', 'class']
+      });
+    }, 1000);
   },
 };
