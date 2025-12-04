@@ -10,12 +10,6 @@
   "options": {
     "draftAndPublish": false
   },
-  "settings": {
-    "defaultSortBy": "rank",
-    "defaultSortOrder": "asc",
-    "pageSize": 7,
-    "maxPageSize": 7
-  },
   "pluginOptions": {},
   "attributes": {
     "name": {

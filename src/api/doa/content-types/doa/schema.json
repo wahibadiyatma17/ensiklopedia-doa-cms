@@ -10,14 +10,16 @@
   "options": {
     "draftAndPublish": true
   },
-  "settings": {
-    "defaultSortBy": "rank",
-    "defaultSortOrder": "asc",
-    "pageSize": 7,
-    "maxPageSize": 7
-  },
   "pluginOptions": {},
   "attributes": {
+    "rank": {
+      "type": "integer",
+      "default": 0,
+      "configurable": false,
+      "writable": true,
+      "visible": true,
+      "private": false
+    },
     "title": {
       "type": "string",
       "required": true
@@ -27,23 +29,18 @@
       "targetField": "title",
       "required": true
     },
-    "doa": {
-      "type": "blocks",
-      "required": false
-    },
     "category": {
       "type": "relation",
       "relation": "oneToOne",
       "target": "api::category.category",
       "inversedBy": "doa"
     },
-    "rank": {
-      "type": "integer",
-      "default": 0,
-      "configurable": false,
-      "writable": true,
-      "visible": true,
-      "private": false
+    "doa": {
+      "type": "customField",
+      "customField": "plugin::ckeditor5.CKEditor",
+      "options": {
+        "preset": "defaultHtml"
+      }
     }
   }
 }
