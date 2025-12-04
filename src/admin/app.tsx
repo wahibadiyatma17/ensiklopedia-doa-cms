@@ -1,4 +1,12 @@
 import type { StrapiApp } from '@strapi/strapi/admin';
+import { 
+  setPluginConfig, 
+  defaultHtmlPreset 
+} from '@_sh/strapi-plugin-ckeditor';
+
+const ckeditorConfig = {
+  presets: [defaultHtmlPreset],
+};
 
 export default {
   config: {
@@ -10,8 +18,86 @@ export default {
       },
     },
   },
+  register() {
+    setPluginConfig(ckeditorConfig);
+  },
   bootstrap(app: StrapiApp) {
     console.log('Admin customization loaded');
+
+    // Add white text styling for CKEditor
+    const addCKEditorStyles = () => {
+      const style = document.createElement('style');
+      style.id = 'ckeditor-white-text';
+      style.textContent = `
+        /* CKEditor white text styling */
+        .ck.ck-editor__editable,
+        .ck.ck-editor__editable * {
+          color: white !important;
+        }
+        
+        .ck.ck-editor__editable p,
+        .ck.ck-editor__editable div,
+        .ck.ck-editor__editable span,
+        .ck.ck-editor__editable h1,
+        .ck.ck-editor__editable h2,
+        .ck.ck-editor__editable h3,
+        .ck.ck-editor__editable h4,
+        .ck.ck-editor__editable h5,
+        .ck.ck-editor__editable h6,
+        .ck.ck-editor__editable li,
+        .ck.ck-editor__editable ul,
+        .ck.ck-editor__editable ol,
+        .ck.ck-editor__editable strong,
+        .ck.ck-editor__editable em,
+        .ck.ck-editor__editable i,
+        .ck.ck-editor__editable b {
+          color: white !important;
+        }
+        
+        /* Ensure new content has white color by default */
+        .ck-content {
+          color: white !important;
+        }
+        
+        /* Override any black text that might be set */
+        .ck.ck-editor__editable [style*="color: rgb(0, 0, 0)"],
+        .ck.ck-editor__editable [style*="color:#000000"],
+        .ck.ck-editor__editable [style*="color: black"] {
+          color: white !important;
+        }
+      `;
+      
+      // Remove existing style if present
+      const existing = document.getElementById('ckeditor-white-text');
+      if (existing) {
+        existing.remove();
+      }
+      
+      document.head.appendChild(style);
+    };
+
+    // Apply styles immediately and when DOM changes
+    addCKEditorStyles();
+    
+    // Monitor for CKEditor initialization
+    const ckEditorObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === 1) {
+            const element = node as Element;
+            if (element.classList?.contains('ck-editor') ||
+                element.querySelector?.('.ck-editor')) {
+              setTimeout(addCKEditorStyles, 100);
+            }
+          }
+        });
+      });
+    });
+    
+    ckEditorObserver.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
 
     // Apply default filter for category collection
     const applyDefaultFilter = () => {

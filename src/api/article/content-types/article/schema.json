@@ -19,8 +19,21 @@
       "type": "uid",
       "targetField": "title"
     },
+    "article_detail": {
+      "type": "customField",
+      "customField": "plugin::ckeditor.CKEditor",
+      "options": {
+        "output": "HTML",
+        "licenseKey": "eyJhbGciOiJFUzI1NiJ9.eyJleHAiOjE3OTYyNTU5OTksImp0aSI6IjdmNjk4YzEwLTk4MzktNDk4NC05MDI3LWI3ZDE1Zjk2NWFlMCIsInVzYWdlRW5kcG9pbnQiOiJodHRwczovL3Byb3h5LWV2ZW50LmNrZWRpdG9yLmNvbSIsImRpc3RyaWJ1dGlvbkNoYW5uZWwiOlsiY2xvdWQiLCJkcnVwYWwiXSwiZmVhdHVyZXMiOlsiRFJVUCIsIkUyUCIsIkUyVyJdLCJyZW1vdmVGZWF0dXJlcyI6WyJQQiIsIlJGIiwiU0NIIiwiVENQIiwiVEwiLCJUQ1IiLCJJUiIsIlNVQSIsIkI2NEEiLCJMUCIsIkhFIiwiUkVEIiwiUEZPIiwiV0MiLCJGQVIiLCJCS00iLCJGUEgiLCJNUkUiXSwidmMiOiIwZDc4OGVlNSJ9.YZe4nZAmEDnAAN3mNWq1HTqyJs2t1STiYnUlU12-U9twxOr08yLcpLEUkuN9NuR2yh291CXgcZzhYJ-15zU3Tg",
+        "preset": "rich"
+      }
+    },
     "content": {
-      "type": "richtext"
+      "type": "customField",
+      "customField": "plugin::ckeditor5.CKEditor",
+      "options": {
+        "preset": "defaultHtml"
+      }
     }
   }
 }
