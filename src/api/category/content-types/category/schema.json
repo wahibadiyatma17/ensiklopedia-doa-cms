@@ -12,6 +12,18 @@
   },
   "pluginOptions": {},
   "attributes": {
+    "Main Category": {
+      "type": "boolean",
+      "default": false,
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      },
+      "configurable": false,
+      "private": false,
+      "visible": true
+    },
     "name": {
       "type": "string",
       "required": true
@@ -34,6 +46,16 @@
       "type": "relation",
       "relation": "manyToMany",
       "target": "api::category.category",
+      "conditions": {
+        "visible": {
+          "!=": [
+            {
+              "var": "Main Category"
+            },
+            true
+          ]
+        }
+      },
       "mappedBy": "subcategories"
     },
     "doa": {
@@ -44,23 +66,17 @@
     },
     "rank": {
       "type": "integer",
-      "default": 0,
-      "configurable": false,
-      "writable": true,
-      "visible": true,
-      "private": false
-    },
-    "Main Category": {
-      "type": "boolean",
-      "default": false,
-      "pluginOptions": {
-        "i18n": {
-          "localized": false
+      "conditions": {
+        "visible": {
+          "==": [
+            {
+              "var": "Main Category"
+            },
+            true
+          ]
         }
       },
-      "configurable": false,
-      "private": false,
-      "visible": true
+      "default": 0
     }
   }
 }
