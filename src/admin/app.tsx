@@ -24,10 +24,17 @@ export default {
   bootstrap(app: StrapiApp) {
     console.log('Admin customization loaded');
 
-    // Apply default filter for category collection
+    // Apply default filter for category collection and redirect content manager to Doa
     const applyDefaultFilter = () => {
       const path = window.location.pathname;
       const search = window.location.search;
+
+      // Redirect content manager root to Category collection
+      if (path === '/admin/content-manager' || path === '/admin/content-manager/') {
+        const doaUrl = '/admin/content-manager/collection-types/api::category.category?page=1&pageSize=16&sort=rank:ASC&filters[$and][0][Main%20Category][$eq]=true';
+        window.location.href = doaUrl;
+        return;
+      }
 
       if (path === '/admin/content-manager/collection-types/api::category.category') {
         // Check if no query params exist OR if it has the specific params to redirect
