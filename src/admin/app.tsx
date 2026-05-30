@@ -1,8 +1,10 @@
 import type { StrapiApp } from '@strapi/strapi/admin';
-import { 
-  setPluginConfig, 
-  defaultHtmlPreset 
+import {
+  setPluginConfig,
+  defaultHtmlPreset
 } from '@_sh/strapi-plugin-ckeditor';
+import { Hashtag } from '@strapi/icons';
+import type { ComponentType } from 'react';
 
 const ckeditorConfig = {
   presets: [defaultHtmlPreset],
@@ -18,8 +20,31 @@ export default {
       },
     },
   },
-  register() {
+  register(app: StrapiApp) {
     setPluginConfig(ckeditorConfig);
+
+    // Auto-incrementing rank input for main categories. When Main Category is
+    // turned on, it looks up the highest existing rank and pre-fills this field
+    // with the next value (e.g. latest 25 -> 26).
+    app.customFields.register({
+      name: 'auto-rank',
+      type: 'integer',
+      icon: Hashtag,
+      intlLabel: {
+        id: 'category.auto-rank.label',
+        defaultMessage: 'Rank',
+      },
+      intlDescription: {
+        id: 'category.auto-rank.description',
+        defaultMessage: 'Auto-incremented order for main categories',
+      },
+      components: {
+        Input: async () =>
+          (await import('./components/AutoRankInput')) as unknown as {
+            default: ComponentType;
+          },
+      },
+    });
   },
   bootstrap(app: StrapiApp) {
     console.log('Admin customization loaded');

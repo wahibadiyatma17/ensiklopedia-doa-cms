@@ -62,7 +62,8 @@
       "mappedBy": "category"
     },
     "rank": {
-      "type": "integer",
+      "type": "customField",
+      "customField": "global::auto-rank",
       "conditions": {
         "visible": {
           "==": [
@@ -73,8 +74,7 @@
           ]
         }
       },
-      "default": 99,
-      "unique": true
+      "default": 99
     }
   }
 }
