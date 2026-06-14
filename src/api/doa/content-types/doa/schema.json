@@ -35,6 +35,11 @@
       "target": "api::category.category",
       "inversedBy": "doa"
     },
+    "footnotes": {
+      "type": "component",
+      "component": "shared.footnote",
+      "repeatable": true
+    },
     "doa": {
       "type": "customField",
       "customField": "plugin::ckeditor5.CKEditor",

@@ -1,0 +1,24 @@
+{
+  "collectionName": "components_shared_footnotes",
+  "info": {
+    "displayName": "footnote",
+    "icon": "write"
+  },
+  "options": {},
+  "attributes": {
+    "label": {
+      "type": "string",
+      "minLength": 3,
+      "required": true
+    },
+    "content": {
+      "type": "customField",
+      "customField": "plugin::ckeditor5.CKEditor",
+      "options": {
+        "preset": "defaultHtml"
+      },
+      "required": true
+    }
+  },
+  "config": {}
+}
