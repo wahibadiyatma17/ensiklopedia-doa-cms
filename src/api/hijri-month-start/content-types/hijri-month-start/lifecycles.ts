@@ -59,7 +59,7 @@ const validate = async (event: any) => {
 
   const seq = hijriYear * 12 + monthIdx; // absolute Hijri month number
 
-  const rows = await strapi.db.query(UID).findMany({ limit: -1 });
+  const rows = await strapi.db.query(UID).findMany();
   for (const row of rows) {
     if (selfId != null && row.id === selfId) continue;
     const rowIdx = MONTH_INDEX[row.hijriMonth];
