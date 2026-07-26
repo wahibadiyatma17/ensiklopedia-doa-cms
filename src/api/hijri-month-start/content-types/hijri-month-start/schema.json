@@ -1,0 +1,48 @@
+{
+  "kind": "collectionType",
+  "collectionName": "hijri_month_starts",
+  "info": {
+    "singularName": "hijri-month-start",
+    "pluralName": "hijri-month-starts",
+    "displayName": "Hijri Month Start",
+    "description": "Tanggal Masehi jatuhnya tanggal 1 setiap bulan Hijriah. Menentukan konversi tanggal pada fitur Kalender Islam di aplikasi."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "gregorianDate": {
+      "type": "date",
+      "required": true,
+      "unique": true
+    },
+    "hijriMonth": {
+      "type": "enumeration",
+      "enum": [
+        "Muharam",
+        "Safar",
+        "Rabiulawal",
+        "Rabiulakhir",
+        "Jumadilawal",
+        "Jumadilakhir",
+        "Rajab",
+        "Syakban",
+        "Ramadan",
+        "Syawal",
+        "Zulqaidah",
+        "Zulhijah"
+      ],
+      "required": true
+    },
+    "hijriYear": {
+      "type": "integer",
+      "required": true,
+      "min": 1300,
+      "max": 1600
+    },
+    "sourceNote": {
+      "type": "string"
+    }
+  }
+}
