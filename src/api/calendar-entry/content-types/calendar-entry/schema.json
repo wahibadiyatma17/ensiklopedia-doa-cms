@@ -1,0 +1,81 @@
+{
+  "kind": "collectionType",
+  "collectionName": "calendar_entries",
+  "info": {
+    "singularName": "calendar-entry",
+    "pluralName": "calendar-entries",
+    "displayName": "Kalender Islam",
+    "description": "Semua data fitur Kalender Islam di aplikasi: hari penting, catatan astronomi, dan awal bulan Hijriah. Pilih jenis entri, lalu isi kolom yang muncul."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "date": {
+      "type": "date",
+      "required": true
+    },
+    "type": {
+      "type": "enumeration",
+      "enum": ["hari_besar", "astronomi", "awal_bulan_hijriah"],
+      "default": "hari_besar",
+      "required": true
+    },
+    "title": {
+      "type": "string",
+      "conditions": {
+        "visible": {
+          "!=": [
+            {
+              "var": "type"
+            },
+            "awal_bulan_hijriah"
+          ]
+        }
+      }
+    },
+    "hijriMonth": {
+      "type": "enumeration",
+      "enum": [
+        "Muharam",
+        "Safar",
+        "Rabiulawal",
+        "Rabiulakhir",
+        "Jumadilawal",
+        "Jumadilakhir",
+        "Rajab",
+        "Syakban",
+        "Ramadan",
+        "Syawal",
+        "Zulqaidah",
+        "Zulhijah"
+      ],
+      "conditions": {
+        "visible": {
+          "==": [
+            {
+              "var": "type"
+            },
+            "awal_bulan_hijriah"
+          ]
+        }
+      }
+    },
+    "hijriYear": {
+      "type": "integer",
+      "min": 1300,
+      "max": 1600,
+      "conditions": {
+        "visible": {
+          "==": [
+            {
+              "var": "type"
+            },
+            "awal_bulan_hijriah"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -521,35 +521,60 @@ export interface ApiAuthorAuthor extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiCalendarEventCalendarEvent
+export interface ApiCalendarEntryCalendarEntry
   extends Struct.CollectionTypeSchema {
-  collectionName: 'calendar_events';
+  collectionName: 'calendar_entries';
   info: {
-    description: 'Hari penting dan catatan astronomi yang tampil pada fitur Kalender Islam di aplikasi.';
-    displayName: 'Calendar Event';
-    pluralName: 'calendar-events';
-    singularName: 'calendar-event';
+    description: 'Semua data fitur Kalender Islam di aplikasi: hari penting, catatan astronomi, dan awal bulan Hijriah. Pilih jenis entri, lalu isi kolom yang muncul.';
+    displayName: 'Kalender Islam';
+    pluralName: 'calendar-entries';
+    singularName: 'calendar-entry';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     date: Schema.Attribute.Date & Schema.Attribute.Required;
-    description: Schema.Attribute.Text;
-    kind: Schema.Attribute.Enumeration<['hari_besar', 'astronomi']> &
-      Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<'hari_besar'>;
+    hijriMonth: Schema.Attribute.Enumeration<
+      [
+        'Muharam',
+        'Safar',
+        'Rabiulawal',
+        'Rabiulakhir',
+        'Jumadilawal',
+        'Jumadilakhir',
+        'Rajab',
+        'Syakban',
+        'Ramadan',
+        'Syawal',
+        'Zulqaidah',
+        'Zulhijah',
+      ]
+    >;
+    hijriYear: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 1600;
+          min: 1300;
+        },
+        number
+      >;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
-      'api::calendar-event.calendar-event'
+      'api::calendar-entry.calendar-entry'
     > &
       Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
-    title: Schema.Attribute.String & Schema.Attribute.Required;
+    title: Schema.Attribute.String;
+    type: Schema.Attribute.Enumeration<
+      ['hari_besar', 'astronomi', 'awal_bulan_hijriah']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'hari_besar'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -628,65 +653,6 @@ export interface ApiDoaDoa extends Struct.CollectionTypeSchema {
     rank: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
     slug: Schema.Attribute.UID<'title'> & Schema.Attribute.Required;
     title: Schema.Attribute.String & Schema.Attribute.Required;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
-export interface ApiHijriMonthStartHijriMonthStart
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'hijri_month_starts';
-  info: {
-    description: 'Tanggal Masehi jatuhnya tanggal 1 setiap bulan Hijriah. Menentukan konversi tanggal pada fitur Kalender Islam di aplikasi.';
-    displayName: 'Hijri Month Start';
-    pluralName: 'hijri-month-starts';
-    singularName: 'hijri-month-start';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    gregorianDate: Schema.Attribute.Date &
-      Schema.Attribute.Required &
-      Schema.Attribute.Unique;
-    hijriMonth: Schema.Attribute.Enumeration<
-      [
-        'Muharam',
-        'Safar',
-        'Rabiulawal',
-        'Rabiulakhir',
-        'Jumadilawal',
-        'Jumadilakhir',
-        'Rajab',
-        'Syakban',
-        'Ramadan',
-        'Syawal',
-        'Zulqaidah',
-        'Zulhijah',
-      ]
-    > &
-      Schema.Attribute.Required;
-    hijriYear: Schema.Attribute.Integer &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMax<
-        {
-          max: 1600;
-          min: 1300;
-        },
-        number
-      >;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::hijri-month-start.hijri-month-start'
-    > &
-      Schema.Attribute.Private;
-    publishedAt: Schema.Attribute.DateTime;
-    sourceNote: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1238,10 +1204,9 @@ declare module '@strapi/strapi' {
       'api::about.about': ApiAboutAbout;
       'api::article.article': ApiArticleArticle;
       'api::author.author': ApiAuthorAuthor;
-      'api::calendar-event.calendar-event': ApiCalendarEventCalendarEvent;
+      'api::calendar-entry.calendar-entry': ApiCalendarEntryCalendarEntry;
       'api::category.category': ApiCategoryCategory;
       'api::doa.doa': ApiDoaDoa;
-      'api::hijri-month-start.hijri-month-start': ApiHijriMonthStartHijriMonthStart;
       'api::global.global': ApiGlobalGlobal;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;

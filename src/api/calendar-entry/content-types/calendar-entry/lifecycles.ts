@@ -1,11 +1,14 @@
 import { errors } from '@strapi/utils';
 
-// Guards the integrity of the Hijri conversion table: one wrong row here
-// breaks the app's Kalender for a whole month span. Every create/update must
-// keep the table a strictly ordered sequence of Hijri months where each month
-// lasts exactly 29 or 30 days.
+// Validation for the single Kalender Islam collection.
+//
+// Event entries (hari_besar / astronomi) just need a title. Awal-bulan
+// entries form the app's Hijri conversion table, where one wrong row breaks
+// dates for a whole month span — so every create/update must keep those rows
+// a strictly ordered sequence of Hijri months, each lasting 29 or 30 days.
 
-const UID = 'api::hijri-month-start.hijri-month-start';
+const UID = 'api::calendar-entry.calendar-entry';
+const MONTH_START = 'awal_bulan_hijriah';
 const DAY_MS = 86400000;
 
 const MONTH_INDEX: Record<string, number> = {
@@ -51,42 +54,56 @@ const validate = async (event: any) => {
     if (existing) current = { ...existing, ...data };
   }
 
-  const { gregorianDate, hijriMonth, hijriYear } = current;
+  if (current.type !== MONTH_START) {
+    if (typeof current.title !== 'string' || current.title.trim() === '') {
+      throw new errors.ApplicationError(
+        'Judul wajib diisi untuk entri hari besar atau astronomi.',
+      );
+    }
+    return;
+  }
+
+  const { date, hijriMonth, hijriYear } = current;
   const monthIdx = MONTH_INDEX[hijriMonth];
-  const utc = toUtcDay(gregorianDate);
-  // Missing/invalid required fields are reported by schema validation.
-  if (utc == null || monthIdx === undefined || hijriYear == null) return;
+  const utc = toUtcDay(date);
+  if (monthIdx === undefined || hijriYear == null) {
+    throw new errors.ApplicationError(
+      'Entri awal bulan Hijriah wajib mengisi bulan Hijriah dan tahun Hijriah.',
+    );
+  }
+  // A missing/invalid date is reported by schema validation.
+  if (utc == null) return;
 
   const seq = hijriYear * 12 + monthIdx; // absolute Hijri month number
 
-  const rows = await strapi.db.query(UID).findMany();
+  const rows = await strapi.db.query(UID).findMany({ where: { type: MONTH_START } });
   for (const row of rows) {
     if (selfId != null && row.id === selfId) continue;
     const rowIdx = MONTH_INDEX[row.hijriMonth];
-    const rowUtc = toUtcDay(row.gregorianDate);
+    const rowUtc = toUtcDay(row.date);
     if (rowIdx === undefined || rowUtc == null) continue;
     const rowSeq = row.hijriYear * 12 + rowIdx;
 
     if (rowSeq === seq) {
       throw new errors.ApplicationError(
-        `${label(current)} sudah terdaftar (mulai ${row.gregorianDate}). Ubah entri yang sudah ada, jangan membuat duplikat.`,
+        `${label(current)} sudah terdaftar (mulai ${row.date}). Ubah entri yang sudah ada, jangan membuat duplikat.`,
       );
     }
     if (rowUtc === utc) {
       throw new errors.ApplicationError(
-        `Tanggal ${current.gregorianDate} sudah dipakai sebagai awal ${label(row)}.`,
+        `Tanggal ${current.date} sudah dipakai sebagai awal ${label(row)}.`,
       );
     }
     if (rowSeq < seq !== rowUtc < utc) {
       throw new errors.ApplicationError(
-        `Urutan tanggal tidak konsisten: ${label(current)} harus ${rowSeq < seq ? 'sesudah' : 'sebelum'} ${label(row)} (${row.gregorianDate}).`,
+        `Urutan tanggal tidak konsisten: ${label(current)} harus ${rowSeq < seq ? 'sesudah' : 'sebelum'} ${label(row)} (${row.date}).`,
       );
     }
     if (rowSeq === seq - 1) {
       const gap = (utc - rowUtc) / DAY_MS;
       if (gap !== 29 && gap !== 30) {
         throw new errors.ApplicationError(
-          `Jarak dari awal ${label(row)} (${row.gregorianDate}) harus 29 atau 30 hari, sekarang ${gap} hari.`,
+          `Jarak dari awal ${label(row)} (${row.date}) harus 29 atau 30 hari, sekarang ${gap} hari.`,
         );
       }
     }
@@ -94,7 +111,7 @@ const validate = async (event: any) => {
       const gap = (rowUtc - utc) / DAY_MS;
       if (gap !== 29 && gap !== 30) {
         throw new errors.ApplicationError(
-          `Jarak ke awal ${label(row)} (${row.gregorianDate}) harus 29 atau 30 hari, sekarang ${gap} hari.`,
+          `Jarak ke awal ${label(row)} (${row.date}) harus 29 atau 30 hari, sekarang ${gap} hari.`,
         );
       }
     }
