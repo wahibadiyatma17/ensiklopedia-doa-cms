@@ -1,124 +1,116 @@
 import { errors } from '@strapi/utils';
+import {
+  HIJRI_MONTHS,
+  MONTH_START_TYPE,
+  UID,
+  daysBetween,
+  hijriFieldsFor,
+  toIsoDate,
+  toMonthStarts,
+  toUtcDay,
+} from '../../hijri';
 
-// Validation for the single Kalender Islam collection.
-//
-// Event entries (hari_besar / astronomi) just need a title. Awal-bulan
-// entries form the app's Hijri conversion table, where one wrong row breaks
-// dates for a whole month span — so every create/update must keep those rows
-// a strictly ordered sequence of Hijri months, each lasting 29 or 30 days.
+type MonthStartRow = { id?: number; date: unknown; hijriMonth: string; hijriYear: number };
 
-const UID = 'api::calendar-entry.calendar-entry';
-const MONTH_START = 'awal_bulan_hijriah';
-const DAY_MS = 86400000;
+const VALID_MONTH_LENGTHS = [29, 30];
 
-const MONTH_INDEX: Record<string, number> = {
-  Muharam: 0,
-  Safar: 1,
-  Rabiulawal: 2,
-  Rabiulakhir: 3,
-  Jumadilawal: 4,
-  Jumadilakhir: 5,
-  Rajab: 6,
-  Syakban: 7,
-  Ramadan: 8,
-  Syawal: 9,
-  Zulqaidah: 10,
-  Zulhijah: 11,
+const isoDate = (value: unknown) => {
+  const utc = toUtcDay(value);
+  return utc == null ? String(value) : toIsoDate(utc);
 };
 
-// Strapi date values arrive as 'YYYY-MM-DD' strings (or Date instances from
-// the admin). Normalize to a UTC day number so arithmetic is timezone-proof.
-const toUtcDay = (value: unknown): number | null => {
-  if (value instanceof Date) {
-    return Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate());
-  }
-  if (typeof value === 'string') {
-    const m = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (m) return Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-  }
-  return null;
-};
+const label = (row: MonthStartRow) => `${row.hijriMonth} ${row.hijriYear}`;
 
-const label = (row: { hijriMonth: string; hijriYear: number }) =>
-  `${row.hijriMonth} ${row.hijriYear}`;
+const monthSequence = (row: MonthStartRow) => row.hijriYear * 12 + HIJRI_MONTHS.indexOf(row.hijriMonth);
 
-const validate = async (event: any) => {
-  const { data, where } = event.params;
+const loadMonthStartRows = (): Promise<MonthStartRow[]> =>
+  strapi.db.query(UID).findMany({
+    where: { type: MONTH_START_TYPE },
+    select: ['id', 'date', 'hijriMonth', 'hijriYear'],
+  });
 
-  // Updates can be partial; merge over the stored row so we always validate
-  // the complete resulting entry.
-  let current = { ...data };
-  const selfId: number | undefined = where?.id ?? data?.id;
-  if (selfId != null) {
-    const existing = await strapi.db.query(UID).findOne({ where: { id: selfId } });
-    if (existing) current = { ...existing, ...data };
-  }
-
-  if (current.type !== MONTH_START) {
-    if (typeof current.title !== 'string' || current.title.trim() === '') {
-      throw new errors.ApplicationError(
-        'Judul wajib diisi untuk entri hari besar atau astronomi.',
-      );
-    }
-    return;
-  }
-
-  const { date, hijriMonth, hijriYear } = current;
-  const monthIdx = MONTH_INDEX[hijriMonth];
-  const utc = toUtcDay(date);
-  if (monthIdx === undefined || hijriYear == null) {
-    throw new errors.ApplicationError(
-      'Entri awal bulan Hijriah wajib mengisi bulan Hijriah dan tahun Hijriah.',
-    );
-  }
-  // A missing/invalid date is reported by schema validation.
+const validateMonthStart = async (current: MonthStartRow, selfId: number | undefined) => {
+  const utc = toUtcDay(current.date);
   if (utc == null) return;
+  const seq = monthSequence(current);
 
-  const seq = hijriYear * 12 + monthIdx; // absolute Hijri month number
-
-  const rows = await strapi.db.query(UID).findMany({ where: { type: MONTH_START } });
-  for (const row of rows) {
-    if (selfId != null && row.id === selfId) continue;
-    const rowIdx = MONTH_INDEX[row.hijriMonth];
+  for (const row of await loadMonthStartRows()) {
+    if (row.id === selfId) continue;
     const rowUtc = toUtcDay(row.date);
-    if (rowIdx === undefined || rowUtc == null) continue;
-    const rowSeq = row.hijriYear * 12 + rowIdx;
+    if (rowUtc == null || !HIJRI_MONTHS.includes(row.hijriMonth)) continue;
+    const rowSeq = monthSequence(row);
 
     if (rowSeq === seq) {
       throw new errors.ApplicationError(
-        `${label(current)} sudah terdaftar (mulai ${row.date}). Ubah entri yang sudah ada, jangan membuat duplikat.`,
+        `${label(current)} sudah terdaftar (mulai ${isoDate(row.date)}). Ubah entri yang sudah ada, jangan membuat duplikat.`,
       );
     }
     if (rowUtc === utc) {
       throw new errors.ApplicationError(
-        `Tanggal ${current.date} sudah dipakai sebagai awal ${label(row)}.`,
+        `Tanggal ${isoDate(current.date)} sudah dipakai sebagai awal ${label(row)}.`,
       );
     }
     if (rowSeq < seq !== rowUtc < utc) {
       throw new errors.ApplicationError(
-        `Urutan tanggal tidak konsisten: ${label(current)} harus ${rowSeq < seq ? 'sesudah' : 'sebelum'} ${label(row)} (${row.date}).`,
+        `Urutan tanggal tidak konsisten: ${label(current)} harus ${rowSeq < seq ? 'sesudah' : 'sebelum'} ${label(row)} (${isoDate(row.date)}).`,
       );
     }
     if (rowSeq === seq - 1) {
-      const gap = (utc - rowUtc) / DAY_MS;
-      if (gap !== 29 && gap !== 30) {
+      const gap = daysBetween(rowUtc, utc);
+      if (!VALID_MONTH_LENGTHS.includes(gap)) {
         throw new errors.ApplicationError(
-          `Jarak dari awal ${label(row)} (${row.date}) harus 29 atau 30 hari, sekarang ${gap} hari.`,
+          `Jarak dari awal ${label(row)} (${isoDate(row.date)}) harus 29 atau 30 hari, sekarang ${gap} hari.`,
         );
       }
     }
     if (rowSeq === seq + 1) {
-      const gap = (rowUtc - utc) / DAY_MS;
-      if (gap !== 29 && gap !== 30) {
+      const gap = daysBetween(utc, rowUtc);
+      if (!VALID_MONTH_LENGTHS.includes(gap)) {
         throw new errors.ApplicationError(
-          `Jarak ke awal ${label(row)} (${row.date}) harus 29 atau 30 hari, sekarang ${gap} hari.`,
+          `Jarak ke awal ${label(row)} (${isoDate(row.date)}) harus 29 atau 30 hari, sekarang ${gap} hari.`,
         );
       }
     }
+  }
+};
+
+const validate = async (event: any) => {
+  const { data, where } = event.params;
+  const selfId: number | undefined = where?.id ?? data?.id;
+  const existing = selfId != null ? await strapi.db.query(UID).findOne({ where: { id: selfId } }) : null;
+  const current = { ...existing, ...data };
+  event.state.wasMonthStart = existing?.type === MONTH_START_TYPE;
+
+  if (current.type !== MONTH_START_TYPE) {
+    if (typeof current.title !== 'string' || current.title.trim() === '') {
+      throw new errors.ApplicationError('Judul wajib diisi untuk entri hari besar atau astronomi.');
+    }
+    Object.assign(data, hijriFieldsFor(current.date, toMonthStarts(await loadMonthStartRows())));
+    return;
+  }
+
+  if (!HIJRI_MONTHS.includes(current.hijriMonth) || current.hijriYear == null) {
+    throw new errors.ApplicationError(
+      'Entri awal bulan Hijriah wajib mengisi bulan Hijriah dan tahun Hijriah.',
+    );
+  }
+  data.hijriDate = `1 ${current.hijriMonth} ${current.hijriYear}`;
+  await validateMonthStart(current, selfId);
+};
+
+const syncHijriFields = () => strapi.service(UID).syncHijriFields();
+
+const syncIfMonthStartChanged = async (event: any) => {
+  if (event.result?.type === MONTH_START_TYPE || event.state?.wasMonthStart) {
+    await syncHijriFields();
   }
 };
 
 export default {
   beforeCreate: validate,
   beforeUpdate: validate,
+  afterCreate: syncIfMonthStartChanged,
+  afterUpdate: syncIfMonthStartChanged,
+  afterDelete: syncIfMonthStartChanged,
+  afterDeleteMany: syncHijriFields,
 };

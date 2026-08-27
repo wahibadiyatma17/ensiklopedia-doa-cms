@@ -4,6 +4,7 @@ import {
   defaultHtmlPreset
 } from '@_sh/strapi-plugin-ckeditor';
 import { Hashtag } from '@strapi/icons';
+import CalendarDateRangeFilter from './components/CalendarDateRangeFilter';
 import type { ComponentType } from 'react';
 
 const ckeditorConfig = {
@@ -48,6 +49,11 @@ export default {
   },
   bootstrap(app: StrapiApp) {
     console.log('Admin customization loaded');
+
+    app.getPlugin('content-manager').injectComponent('listView', 'actions', {
+      name: 'kalender-islam-date-range',
+      Component: CalendarDateRangeFilter,
+    });
 
     // Apply default filter for category collection and redirect content manager to Doa
     const applyDefaultFilter = () => {
