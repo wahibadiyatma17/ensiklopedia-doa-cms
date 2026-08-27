@@ -35,6 +35,10 @@
         }
       }
     },
+    "hijriDate": {
+      "type": "string",
+      "description": "Diisi otomatis dari tabel awal bulan Hijriah, mis. \"13 Rajab 1446\". Jangan diisi manual — nilainya ditimpa setiap kali entri disimpan."
+    },
     "hijriMonth": {
       "type": "enumeration",
       "enum": [
