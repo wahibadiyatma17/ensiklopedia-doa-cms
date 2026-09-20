@@ -35,6 +35,21 @@
         }
       }
     },
+    "followsHijri": {
+      "type": "boolean",
+      "default": false,
+      "description": "Aktifkan kalau peristiwa ini melekat pada tanggal Hijriah (mis. 13 Rajab). Tanggal Masehinya ikut bergeser otomatis setiap kali awal bulan Hijriah dikoreksi.",
+      "conditions": {
+        "visible": {
+          "==": [
+            {
+              "var": "type"
+            },
+            "hari_besar"
+          ]
+        }
+      }
+    },
     "hijriDate": {
       "type": "string",
       "description": "Diisi otomatis dari tabel awal bulan Hijriah, mis. \"13 Rajab 1446\". Jangan diisi manual — nilainya ditimpa setiap kali entri disimpan."

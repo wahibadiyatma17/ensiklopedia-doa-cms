@@ -23,9 +23,13 @@ dan cara aplikasi mengambilnya lewat API.
    `hijriMonth`/`hijriYear` justru diisi editor dan tidak diutak-atik; hanya
    `hijriDate` yang diturunkan. Ketiganya ada supaya **Filters dan Search bawaan
    Strapi** bisa bekerja pada tanggal Hijriah (lihat poin 4).
-5. **Draft & Publish dimatikan** (`draftAndPublish: false`). Begitu entri disimpan,
+5. Hari besar bisa **mengikuti tanggal Hijriah** lewat field **`followsHijri`**. Entri
+   seperti itu melekat pada tanggal Hijriahnya (mis. *13 Rajab 1447*), bukan pada tanggal
+   Masehinya: kalau awal bulan Hijriah dikoreksi, `date`-nya ikut bergeser otomatis
+   (lihat poin 5.4). Entri tanpa `followsHijri` tetap di tanggal Masehinya.
+6. **Draft & Publish dimatikan** (`draftAndPublish: false`). Begitu entri disimpan,
    entri itu langsung live di API. Tidak ada tombol Publish.
-6. Entri `awal_bulan_hijriah` bersifat **kritis**: satu baris salah membuat konversi
+7. Entri `awal_bulan_hijriah` bersifat **kritis**: satu baris salah membuat konversi
    tanggal aplikasi meleset untuk rentang satu bulan penuh. Karena itu ada validasi
    ketat di `lifecycles.ts` (lihat poin 5).
 
@@ -43,6 +47,7 @@ Enam file di bawah `src/api/calendar-entry/` — urutan ini juga urutan kerjanya
    - `date` : `date`, **required** (untuk semua tipe)
    - `type` : `enumeration` [`hari_besar`, `astronomi`, `awal_bulan_hijriah`], required, default `hari_besar`
    - `title` : `string`, hanya muncul kalau `type != awal_bulan_hijriah`
+   - `followsHijri` : `boolean`, default `false`, hanya muncul kalau `type == hari_besar`
    - `hijriDate` : `string`, diisi otomatis lifecycle (mis. `13 Rajab 1446`); dipakai untuk search & filter
    - `hijriMonth` / `hijriYear` : diisi editor untuk awal bulan, diturunkan otomatis untuk tipe lain
    - `hijriMonth` : `enumeration` 12 nama bulan (Muharam … Zulhijah), hanya muncul kalau `type == awal_bulan_hijriah`
@@ -65,14 +70,21 @@ Enam file di bawah `src/api/calendar-entry/` — urutan ini juga urutan kerjanya
    File ini juga yang mengisi field Hijriah turunan saat simpan, dan lewat `afterCreate`/
    `afterUpdate`/`afterDelete`/`afterDeleteMany` memanggil `syncHijriFields()` setiap kali
    ada baris awal bulan yang berubah — termasuk kalau sebuah baris **berhenti** menjadi
-   awal bulan karena `type`-nya diganti.
+   awal bulan karena `type`-nya diganti. Sebelum baris awal bulan disimpan, file ini juga
+   memastikan tidak ada entri `followsHijri` yang kehilangan tanggalnya (poin 5.4).
 3. **`controllers/calendar-entry.ts`** — controller default:
    `factories.createCoreController('api::calendar-entry.calendar-entry')`
 4. **`routes/calendar-entry.ts`** — router default: `factories.createCoreRouter(...)`
-5. **`services/calendar-entry.ts`** — service default plus satu method kustom,
-   **`syncHijriFields()`**: membaca semua baris sekali, menghitung ulang ketiga field
-   Hijriah, dan menulis **hanya baris yang berubah** dalam satu transaksi. Mengembalikan
-   jumlah baris yang ditulis. Dipanggil oleh lifecycle (cascade) dan `npm run sync:hijri`.
+5. **`services/calendar-entry.ts`** — service default plus dua method kustom:
+   - **`syncHijriFields()`**: membaca semua baris sekali. Untuk entri biasa ia menghitung
+     ulang ketiga field Hijriah dari `date`; untuk entri `followsHijri` arahnya dibalik —
+     `date` dihitung ulang dari tanggal Hijriahnya. Hanya baris yang berubah yang ditulis,
+     dikelompokkan per nilai yang sama, dalam satu transaksi. Mengembalikan
+     `{ updated, moved }`: jumlah baris yang ditulis dan berapa di antaranya yang pindah
+     tanggal. Dipanggil oleh lifecycle (cascade) dan `npm run sync:hijri`.
+   - **`flagHijriFollowers({ dryRun })`**: menandai `followsHijri` secara massal untuk
+     hari besar yang judulnya menyebut tanggal Hijriahnya sendiri (poin 6.7). Dipanggil
+     `npm run flag:hijri`.
 
 Setelah file dibuat, jalankan `npm run develop`. Strapi akan membuat tabelnya
 otomatis dan meregenerasi `types/generated/contentTypes.d.ts`.
@@ -98,10 +110,14 @@ otomatis dan meregenerasi `types/generated/contentTypes.d.ts`.
 2. Pilih **type** = `hari_besar`.
 3. Isi **title** dengan nama peristiwa. Konvensi data yang ada:
    sertakan tanggal Hijriah dalam kurung, mis. `Milad Imam Muhammad al-Baqir as (1 Rajab)`.
-4. Field `hijriMonth` dan `hijriYear` tidak akan muncul — memang tidak dipakai.
-5. Kosongkan **hijriDate** — diisi otomatis saat disimpan, bersama `hijriMonth`
+4. Aktifkan **followsHijri** kalau peristiwanya melekat pada tanggal Hijriah — hampir
+   semua milad, syahadah, dan hari raya. Biarkan mati untuk peristiwa bertanggal Masehi
+   tetap (mis. *Haul Imam Khomeini*) atau yang tanggalnya ditentukan aturan lain
+   (mis. *Jum'at terakhir Ramadan*, *akhir Safar*).
+5. Field `hijriMonth` dan `hijriYear` tidak akan muncul — memang tidak dipakai.
+6. Kosongkan **hijriDate** — diisi otomatis saat disimpan, bersama `hijriMonth`
    dan `hijriYear` yang memang tidak muncul di form untuk tipe ini.
-6. Klik **Save**. Entri langsung live (tidak ada Publish).
+7. Klik **Save**. Entri langsung live (tidak ada Publish).
 
 ### 3.3 Menambah Catatan Astronomi (`astronomi`)
 
@@ -274,12 +290,39 @@ Semua diberlakukan di `src/api/calendar-entry/content-types/calendar-entry/lifec
 3. Untuk hari besar/astronomi, nilainya dicari dari baris awal bulan terakhir yang
    tanggalnya ≤ tanggal entri.
 4. Kalau tanggal entri **di luar cakupan** tabel awal bulan (sebelum baris paling awal,
-   atau lewat 30 hari dari baris paling akhir), ketiganya dibiarkan **kosong** —
-   lebih baik kosong daripada salah bulan. Import awal bulan untuk tahun itu — cascade
+   lewat 30 hari dari baris paling akhir, atau jatuh di **lubang rangkaian** — lebih dari
+   30 hari sejak awal bulan sebelumnya karena ada baris awal bulan yang hilang), ketiganya
+   dibiarkan **kosong** — lebih baik kosong daripada salah bulan. Import awal bulan untuk tahun itu — cascade
    akan mengisi sisanya otomatis.
 5. Mengubah/menghapus satu baris awal bulan otomatis memicu **hitung ulang** field
    Hijriah semua entri. Hanya baris yang nilainya benar-benar berubah yang ditulis ulang,
    dalam satu transaksi.
+
+### 5.4 Entri yang mengikuti tanggal Hijriah (`followsHijri`)
+
+1. **Jangkar** sebuah entri `followsHijri` adalah tanggal Hijriah yang tersimpan di
+   `hijriDate`/`hijriMonth`/`hijriYear`. Jangkar itu ditetapkan dari `date` setiap kali
+   entri disimpan — jadi cukup isi tanggal Masehi seperti biasa lalu aktifkan `followsHijri`.
+2. **Saat awal bulan Hijriah dikoreksi**, arah hitungnya dibalik: jangkar dipertahankan
+   dan `date` dihitung ulang. Contoh: *1 Rajab* semula `2025-12-01`; awal Rajab digeser ke
+   `2025-11-30` → entri `followsHijri` pindah ke `2025-11-30` dan tetap berlabel *1 Rajab*,
+   sedangkan entri biasa tetap di `2025-12-01` dan labelnya berubah jadi *2 Rajab*.
+3. **Memindahkan entri secara manual tetap bisa**: ubah `date`, simpan, dan jangkarnya
+   mengikuti tanggal baru itu.
+4. **Hanya `hari_besar` yang bisa mengikuti Hijriah.** Untuk `astronomi` dan
+   `awal_bulan_hijriah` nilainya selalu dipaksa `false`, juga kalau `type` sebuah entri
+   diganti.
+5. **Koreksi yang membuat sebuah tanggal hilang ditolak.** Kalau sebuah bulan memendek
+   jadi 29 hari padahal ada entri `followsHijri` di tanggal 30 bulan itu, simpan ditolak
+   dan entri penyebabnya disebutkan:
+   - Error: *"Syakban 1446 menjadi 29 hari, padahal ada entri yang mengikuti tanggal
+     Hijriah di luar panjang bulan itu: "…" (30 Syakban 1446). Pindahkan entri tersebut
+     atau matikan followsHijri-nya, lalu simpan ulang."*
+   - Solusi: pindahkan entri itu ke tanggal yang benar, atau matikan `followsHijri`-nya,
+     lalu ulangi koreksi awal bulannya. Tidak ada entri yang dipindah diam-diam.
+6. **Kalau bulan jangkarnya tidak ada di tabel** (baris awal bulannya dihapus, atau
+   tanggalnya di luar cakupan), entri dibiarkan apa adanya sampai bulan itu tersedia lagi.
+7. Jumlah entri yang ikut bergeser dicatat di log server setiap kali koreksi disimpan.
 
 ---
 
@@ -324,7 +367,22 @@ Untuk mengisi banyak tahun sekaligus, jangan input manual — pakai importer.
    selama masih NULL, **semua filter Hijriah mengembalikan hasil kosong**. Script ini
    memanggil `syncHijriFields()` dan melaporkan berapa baris yang ditulis. Idempotent:
    kalau semuanya sudah benar, hasilnya `0 entries updated`.
-7. **Perhatikan database target.** Kedua script memakai env `DATABASE_*` yang sama dengan server:
+7. **Tandai hari besar yang mengikuti Hijriah**:
+
+   ```bash
+   npm run flag:hijri -- --dry-run
+   npm run flag:hijri
+   ```
+   Importer tidak mengisi `followsHijri`. Script ini menandai hari besar yang judulnya
+   menyebut tanggal Hijriah yang sama dengan tanggal Hijriah turunannya, mis.
+   `Milad Imam Ali bin Abi Thalib as (13 Rajab)` pada *13 Rajab* atau
+   `Lailatul Qadr I (18 Ramadan malam)` pada *18 Ramadan*. Sisanya dicetak sebagai daftar
+   **manual review** dan tidak disentuh: peristiwa bertanggal Masehi tetap, yang tanggalnya
+   ditentukan aturan lain, dan entri yang judul dan tanggalnya tidak cocok (kemungkinan
+   salah data — periksa satu per satu). `--dry-run` hanya melaporkan tanpa menulis.
+   Idempotent: entri yang sudah ditandai dilewati. Jalankan `npm run sync:hijri` lebih dulu
+   supaya field Hijriah turunannya pasti mutakhir.
+8. **Perhatikan database target.** Ketiga script memakai env `DATABASE_*` yang sama dengan server:
    - jalankan apa adanya → masuk ke DB dev lokal;
    - untuk CMS production, jalankan dengan env production yang di-load.
 
@@ -336,7 +394,8 @@ Untuk mengisi banyak tahun sekaligus, jangan input manual — pakai importer.
 4. Field Hijriah baris yang tadinya di luar cakupan terisi otomatis oleh cascade saat
    awal bulan baru masuk; `npm run sync:hijri` boleh dijalankan untuk memastikan
    (harus `0 entries updated`).
-5. Cek jumlah baris di admin panel, dan pastikan bulan terakhir tersambung rapat
+5. Jalankan `npm run flag:hijri` supaya hari besar tahun baru ikut mengikuti Hijriah.
+6. Cek jumlah baris di admin panel, dan pastikan bulan terakhir tersambung rapat
    (29/30 hari) dengan bulan pertama tahun baru.
 
 ---
@@ -369,10 +428,13 @@ Untuk mengisi banyak tahun sekaligus, jangan input manual — pakai importer.
    ```
    Untuk satu tanggal persis pakai `$startsWith` pada `hijriDate` (bukan `$contains`,
    supaya `1 Rajab` tidak ikut mencocokkan `21 Rajab`).
-7. **Bentuk response** tiap item: `documentId`, `date`, `type`, `title`, `hijriDate`,
-   `hijriMonth`, `hijriYear`, `createdAt`, `updatedAt`, `publishedAt`.
-   Untuk `hari_besar`/`astronomi`, `hijriMonth` dan `hijriYear` bernilai `null`;
-   untuk `awal_bulan_hijriah`, `title` bernilai `null`.
+7. **Bentuk response** tiap item: `documentId`, `date`, `type`, `title`, `followsHijri`,
+   `hijriDate`, `hijriMonth`, `hijriYear`, `createdAt`, `updatedAt`, `publishedAt`.
+   Untuk `awal_bulan_hijriah`, `title` bernilai `null`.
+8. **Aplikasi hanya membaca `date`.** Entri `followsHijri` yang bergeser sampai ke aplikasi
+   sebagai `date` baru pada sinkronisasi berikutnya — tidak perlu rilis aplikasi. Baris
+   yang ditulis ulang oleh cascade ikut mendapat `updatedAt` baru, yang dipakai aplikasi
+   untuk mendeteksi perubahan.
 
 ---
 
@@ -396,7 +458,13 @@ Untuk mengisi banyak tahun sekaligus, jangan input manual — pakai importer.
        menghasilkan rentang Masehi sepanjang satu bulan penuh.
 9d. [ ] Popup-nya tidak terpotong di tepi kanan layar, dan tidak ada input yang
        melewati batas panel.
-10. [ ] Ubah tanggal satu baris awal bulan → field Hijriah hari besar di bulan itu ikut bergeser.
+10. [ ] Ubah tanggal satu baris awal bulan → hari besar `followsHijri` di bulan itu pindah
+        tanggal Masehi dengan label Hijriah tetap; entri lain tetap di tanggalnya dengan
+        label Hijriah yang bergeser.
+10b. [ ] Buat hari besar `followsHijri` di tanggal 30 sebuah bulan, lalu koreksi awal bulan
+        berikutnya supaya bulan itu jadi 29 hari → harus ditolak dengan menyebut entri itu.
+10c. [ ] `npm run flag:hijri -- --dry-run` melaporkan jumlah yang akan ditandai tanpa menulis;
+        run kedua `npm run flag:hijri` melaporkan `Flagged 0 entries`.
 11. [ ] Izin Public `find`/`findOne` aktif dan endpoint membalas `200`.
 
 ---
@@ -411,9 +479,11 @@ Untuk mengisi banyak tahun sekaligus, jangan input manual — pakai importer.
 | Error "Urutan tanggal tidak konsisten" | Salah pilih bulan atau salah tahun Hijriah | Cek `hijriMonth` + `hijriYear` |
 | Data di app kurang / terpotong | Kena `defaultLimit: 25` | Kirim `pagination[pageSize]` dan loop halaman (poin 7.5) |
 | Field Hijriah tidak muncul di form | `type` belum diganti ke `awal_bulan_hijriah` | Ganti dropdown `type` dulu |
-| Import mengenai DB yang salah | Env `DATABASE_*` tidak sesuai target | Poin 6.7 |
+| Import mengenai DB yang salah | Env `DATABASE_*` tidak sesuai target | Poin 6.8 |
 | Field Hijriah kosong di banyak baris | Baris lama, atau di luar cakupan tabel awal bulan | `npm run sync:hijri` (poin 6.6) |
 | **Filter Hijriah selalu mengembalikan hasil kosong** | Field turunannya masih NULL | `npm run sync:hijri` — penyebab paling umum |
+| Error "… menjadi 29 hari, padahal ada entri yang mengikuti tanggal Hijriah …" | Koreksi awal bulan menghapus tanggal 30 yang dipakai entri `followsHijri` | Pindahkan entri itu atau matikan `followsHijri`-nya, lalu simpan ulang (poin 5.4) |
+| Hari besar tidak ikut bergeser saat awal bulan dikoreksi | `followsHijri` belum aktif di entri itu | Aktifkan di form, atau `npm run flag:hijri` (poin 6.7) |
 | Cari `1 Rajab` malah dapat `21 Rajab` | Pakai `contains`, seharusnya `starts with` | Poin 4.2 |
 | Admin panel putih polos di `npm run develop` | `NODE_ENV` dipaksa `production` di `.env` | Hapus baris itu, `rm -rf node_modules/.strapi`, restart |
 | Admin putih polos setelah `npm run build` | `strapi build` menimpa cache dep Vite dengan bundle produksi yang dipakai bareng dev server | `rm -rf node_modules/.strapi`, restart `npm run develop` |
@@ -428,11 +498,12 @@ Untuk mengisi banyak tahun sekaligus, jangan input manual — pakai importer.
 | `src/api/calendar-entry/content-types/calendar-entry/schema.json` | Definisi field + form kondisional |
 | `src/api/calendar-entry/content-types/calendar-entry/lifecycles.ts` | Semua aturan validasi |
 | `src/api/calendar-entry/hijri.ts` | Konversi Masehi ↔ Hijriah; dipakai server dan admin |
-| `src/api/calendar-entry/services/calendar-entry.ts` | Service default + `syncHijriFields()` |
+| `src/api/calendar-entry/services/calendar-entry.ts` | Service default + `syncHijriFields()` + `flagHijriFollowers()` |
 | `src/api/calendar-entry/controllers|routes/` | Controller/route default Strapi |
 | `scripts/import-calendar.js` | Importer massal (`npm run import:calendar`) |
 | `src/admin/components/CalendarDateRangeFilter.tsx` | Tombol "Date range" (Masehi/Hijriah) di list view |
 | `src/admin/app.tsx` | Pendaftaran tombol itu ke zona `listView.actions` |
 | `scripts/sync-hijri-fields.js` | Pembungkus `syncHijriFields()` (`npm run sync:hijri`) |
+| `scripts/flag-hijri-followers.js` | Pembungkus `flagHijriFollowers()` (`npm run flag:hijri`) |
 | `data/falak-abi-calendar.json` | Dataset falak sumber import |
 | `config/api.ts` | Batas paginasi REST |

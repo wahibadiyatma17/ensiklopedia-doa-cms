@@ -13,6 +13,7 @@
     "import:data": "strapi script scripts/import-to-strapi.js",
     "import:calendar": "node scripts/import-calendar.js",
     "sync:hijri": "node scripts/sync-hijri-fields.js",
+    "flag:hijri": "node scripts/flag-hijri-followers.js",
     "cleanup:categories": "node scripts/cleanup-category-locales.js",
     "fix:categories": "strapi script scripts/fix-category-locales.js",
     "start": "strapi start",
