@@ -5,8 +5,8 @@ async function main() {
   const app = await createStrapi(await compileStrapi()).load();
   app.log.level = 'error';
   try {
-    const updated = await app.service('api::calendar-entry.calendar-entry').syncHijriFields();
-    console.log(`Hijri fields synced: ${updated} entries updated`);
+    const { updated, moved } = await app.service('api::calendar-entry.calendar-entry').syncHijriFields();
+    console.log(`Hijri fields synced: ${updated} entries updated, ${moved} of them moved to follow their Hijri date`);
   } finally {
     await app.destroy();
   }

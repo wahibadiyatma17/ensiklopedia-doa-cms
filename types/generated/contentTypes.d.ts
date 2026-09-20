@@ -538,6 +538,7 @@ export interface ApiCalendarEntryCalendarEntry
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     date: Schema.Attribute.Date & Schema.Attribute.Required;
+    followsHijri: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     hijriDate: Schema.Attribute.String;
     hijriMonth: Schema.Attribute.Enumeration<
       [
